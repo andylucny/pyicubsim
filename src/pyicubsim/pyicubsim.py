@@ -20,6 +20,22 @@ import shutil
 # for Python >= 3.8 which ignores %PATH%
 if os.name == 'nt':
 
+    def init_iCubSim_bindings():
+        if os.path.isdir('iCubSim'):
+            _pwd = os.getcwd()
+            os.chdir('iCubSim')
+            os.system('init-bindings.bat')
+            os.chdir(_pwd)
+            print()
+            print("Do you want to avoid objects (table, ball)? (y/n): ")
+            ans = input()
+            if ans == 'y' or ans == 'Y':
+                print('no objects are used')
+                shutil.copy('iCubSim/bin/iCub_parts_activation.ini','iCubSim/bin/iCub_parts_activation_Objects.ini')
+                shutil.copy('iCubSim/bin/iCub_parts_activation_noObjects.ini','iCubSim/bin/iCub_parts_activation.ini')
+                shutil.copy('iCubSim/run-iCubSim.bat','iCubSim/run-iCubSim_Objects.bat')
+                shutil.copy('iCubSim/run-iCubSim_noObjects.bat','iCubSim/run-iCubSim.bat')
+
     def download_iCubSim():
         url = "https://www.agentspace.org/download/iCubSim.zip"
         print("downloading iCubSim")
@@ -29,33 +45,23 @@ if os.name == 'nt':
             file_like_object = io.BytesIO(response.content)
             zipfile_obj = zipfile.ZipFile(file_like_object)    
             zipfile_obj.extractall(".")
-            if os.path.isdir('iCubSim'):
-                _pwd = os.getcwd()
-                os.chdir('iCubSim')
-                os.system('init-bindings.bat')
-                os.chdir(_pwd)
-                print()
-                print("Do you want to avoid objects (table, ball)? (y/n): ")
-                ans = input()
-                if ans == 'y' or ans == 'Y':
-                    print('no objects are used')
-                    shutil.copy('iCubSim/bin/iCub_parts_activation.ini','iCubSim/bin/iCub_parts_activation_Objects.ini')
-                    shutil.copy('iCubSim/bin/iCub_parts_activation_noObjects.ini','iCubSim/bin/iCub_parts_activation.ini')
-                    shutil.copy('iCubSim/run-iCubSim.bat','iCubSim/run-iCubSim_Objects.bat')
-                    shutil.copy('iCubSim/run-iCubSim_noObjects.bat','iCubSim/run-iCubSim.bat')
-                
 
-    if sys.version >= '3.8':
+    if not os.path.isdir('iCubSim'):
+        download_iCubSim()
+
+    ver = tuple(map(int,sys.version.split(".")[:2]))
+    if ver[0] >= 3 and ver[1] >= 8:
         os.add_dll_directory(os.path.abspath(os.path.curdir)+'/iCubSim/bin') 
     else:
         os.environ['PATH'] += "iCumSim\\bin;" 
     
-    if not os.path.isdir('iCubSim'):
-        download_iCubSim()
-
     if not os.path.exists('yarp.py') or not os.path.exists('_yarp.pyd'):
-        print("yarp protocol not available for pyicubsim")
-        os._exit(0)
+        init_iCubSim_bindings()
+        if not os.path.exists('yarp.py') or not os.path.exists('_yarp.pyd'):
+            print("yarp protocol not available for pyicubsim")
+            os._exit(0)
+            
+    print('please, wait...')
 
 import yarp
 import numpy as np
@@ -63,6 +69,21 @@ import cv2
 import socket
 import re
 import time
+
+appName = '/app/client'
+ipAddress = 'localhost'
+
+def iCubApplicationName(name):
+    appName = name
+
+def setApplicationName(name):
+    iCubApplicationName(name)
+
+def iCubIP(ip='192.168.56.1'):
+    ipAddress = ip
+
+def setIP(ip='192.168.56.1'):
+    iCubIP(ip)
 
 class NoYarp:
     # parse respose from naming service
@@ -203,7 +224,7 @@ class iCubCamera:
 
 class iCubEmotion:
     def __init__(self):
-        host = 'localhost' #'192.168.56.1'
+        host = ipAddress
         port_name = '/emotion/in'
         self.query = NoYarp.query(host,port_name)
         self.neutral = 'neu'
@@ -222,7 +243,7 @@ class iCubEmotion:
 
 class iCubBall:
     def __init__(self):
-        host = 'localhost' #'192.168.56.1'
+        host = ipAddress
         port_name = '/icubSim/world'
         self.query = NoYarp.query(host, port_name)
         self.get()
@@ -260,7 +281,7 @@ class iCubBall:
 # start simulator if it is not started yet
 def isRunning_iCubSim():
     try:
-        NoYarp.command(('localhost',10000),"query /icubSim/world")
+        NoYarp.command((ipAddress,10000),"query /icubSim/world")
         return True
     except ConnectionRefusedError:
         return False
@@ -454,14 +475,6 @@ class Kinematics:
         thetas, achieved, distance, iterations = Kinematics.inverseRightArm(g,first,last)
         return (-thetas[0],-thetas[1])+thetas[2:], achieved, distance, iterations
 
-appName = '/app/client'
-
-def setApplicationName(name):
-    appName = name
-    
-def iCubApplicationName(name):
-    appName = name
-        
 class iCubRightArm(iCubLimb):
     def __init__(self):
         super().__init__(appName,'/icubSim/right_arm')
