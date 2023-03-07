@@ -74,12 +74,14 @@ appName = '/app/client'
 ipAddress = 'localhost'
 
 def iCubApplicationName(name):
+    global appName
     appName = name
 
 def setApplicationName(name):
     iCubApplicationName(name)
 
 def iCubIP(ip='192.168.56.1'):
+    global ipAddress
     ipAddress = ip
 
 def setIP(ip='192.168.56.1'):
