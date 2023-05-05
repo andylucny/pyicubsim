@@ -53,7 +53,7 @@ if os.name == 'nt':
     if ver[0] >= 3 and ver[1] >= 8:
         os.add_dll_directory(os.path.abspath(os.path.curdir)+'/iCubSim/bin') 
     else:
-        os.environ['PATH'] += "iCumSim\\bin;" 
+        os.environ['PATH'] += "iCubSim\\bin;" 
     
     if not os.path.exists('yarp.py') or not os.path.exists('_yarp.pyd'):
         init_iCubSim_bindings()
