@@ -171,11 +171,11 @@ class iCubLimb:
         self.iEnc.getEncoders(encs.data())
         # adjust joint positions
         for i in range(min(self.jnts,len(values))):
-            if values[i] != None:
+            if values[i] is not None:
                 encs.set(i,values[i])
         for i in range(16):
             value = eval('joint'+str(i))
-            if value != None:
+            if value is not None:
                 #print('joint',i,'=',value)
                 encs.set(i,value)
         # write to motors
